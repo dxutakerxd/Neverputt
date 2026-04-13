@@ -1,0 +1,143 @@
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+}
+
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+def keystoreProperties = new Properties()
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
+android {
+    namespace 'com.miniputt.mobile'
+    compileSdk 35
+    ndkVersion '25.1.8937393'
+
+    signingConfigs {
+        release {
+            if (keystorePropertiesFile.exists()) {
+                storeFile file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+            }
+        }
+    }
+
+    defaultConfig {
+        applicationId = 'com.miniputt.mobile'
+        versionCode = 9
+        versionName = "1.0.8"
+
+        minSdk 24
+        targetSdk 35
+
+        ndk {
+            abiFilters 'arm64-v8a', 'armeabi-v7a'
+        }
+
+        externalNativeBuild {
+            cmake {
+                arguments '-DANDROID_STL=c++_static',
+                          '-DANDROID_STUDIO=ON',
+                          '-DCMAKE_VERBOSE_MAKEFILE=ON',
+                          '-DHUNTER_KEEP_PACKAGE_SOURCES=ON',
+                          "-DVERSION_NAME=${versionName}"
+            }
+        }
+    }
+    flavorDimensions += ["version", "store"]
+    productFlavors {
+        ball {
+            dimension "version"
+            resValue "string", "app_name", "MiniPutt Mobile"
+            applicationIdSuffix ".ball"
+            externalNativeBuild {
+                cmake {
+                    targets "neverball"
+                }
+            }
+        }
+        putt {
+            dimension "version"
+            resValue "string", "app_name", "MiniPutt Mobile"
+            applicationIdSuffix ".putt"
+            externalNativeBuild {
+                cmake {
+                    targets "neverputt"
+                }
+            }
+        }
+        dapp {
+            dimension "store"
+            externalNativeBuild {
+                cmake {
+                    arguments '-DENABLE_WALLET=ON'
+                }
+            }
+        }
+        play {
+            dimension "store"
+        }
+    }
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'),
+                    'proguard-rules.pro'
+        }
+        debug {
+        }
+    }
+    externalNativeBuild {
+        cmake {
+            path '../../CMakeLists.txt'
+            version "3.22.1"
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
+    buildFeatures {
+        buildConfig true
+    }
+    sourceSets {
+        main {
+            // Default assets dir where we copy game data into
+            assets.srcDirs = ['src/main/assets']
+        }
+    }
+    aaptOptions {
+        noCompress 'sol', 'map', 'ogg'
+    }
+}
+
+dependencies {
+    implementation 'com.google.android.gms:play-services-ads:23.6.0'
+
+    // Solana deps — dApp Store builds only
+    dappImplementation 'com.solanamobile:mobile-wallet-adapter-clientlib-ktx:2.0.3'
+    dappImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
+    dappImplementation 'com.squareup.okhttp3:okhttp:4.12.0'
+}
+
+// Copy game data into android assets/data/ directory before build
+tasks.register('copyGameData', Copy) {
+    from '../../data'
+    into 'src/main/assets/data'
+}
+
+tasks.configureEach { task ->
+    if (task.name.startsWith('merge') && task.name.endsWith('Assets')) {
+        task.dependsOn 'copyGameData'
+    }
+    if (task.name.contains('lintVital') || task.name.contains('LintVital')) {
+        task.dependsOn 'copyGameData'
+    }
+}
