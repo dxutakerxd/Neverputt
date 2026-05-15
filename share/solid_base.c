@@ -464,6 +464,35 @@ static void sol_load_indx(fs_file fin, struct s_base *fp)
 
 static const char *sol_load_name;
 
+/* Upper bound for any single SOL count field. */
+#define SOL_MAX_COUNT 2000000
+
+static int sol_validate_counts(const struct s_base *fp)
+{
+    if (fp->ac < 0 || fp->ac > SOL_MAX_COUNT) return 0;
+    if (fp->dc < 0 || fp->dc > SOL_MAX_COUNT) return 0;
+    if (fp->mc < 0 || fp->mc > SOL_MAX_COUNT) return 0;
+    if (fp->vc < 0 || fp->vc > SOL_MAX_COUNT) return 0;
+    if (fp->ec < 0 || fp->ec > SOL_MAX_COUNT) return 0;
+    if (fp->sc < 0 || fp->sc > SOL_MAX_COUNT) return 0;
+    if (fp->tc < 0 || fp->tc > SOL_MAX_COUNT) return 0;
+    if (fp->oc < 0 || fp->oc > SOL_MAX_COUNT) return 0;
+    if (fp->gc < 0 || fp->gc > SOL_MAX_COUNT) return 0;
+    if (fp->lc < 0 || fp->lc > SOL_MAX_COUNT) return 0;
+    if (fp->nc < 0 || fp->nc > SOL_MAX_COUNT) return 0;
+    if (fp->pc < 0 || fp->pc > SOL_MAX_COUNT) return 0;
+    if (fp->bc < 0 || fp->bc > SOL_MAX_COUNT) return 0;
+    if (fp->hc < 0 || fp->hc > SOL_MAX_COUNT) return 0;
+    if (fp->zc < 0 || fp->zc > SOL_MAX_COUNT) return 0;
+    if (fp->jc < 0 || fp->jc > SOL_MAX_COUNT) return 0;
+    if (fp->xc < 0 || fp->xc > SOL_MAX_COUNT) return 0;
+    if (fp->rc < 0 || fp->rc > SOL_MAX_COUNT) return 0;
+    if (fp->uc < 0 || fp->uc > SOL_MAX_COUNT) return 0;
+    if (fp->wc < 0 || fp->wc > SOL_MAX_COUNT) return 0;
+    if (fp->ic < 0 || fp->ic > SOL_MAX_COUNT) return 0;
+    return 1;
+}
+
 static int sol_load_file(fs_file fin, struct s_base *fp)
 {
     int i;
@@ -472,6 +501,9 @@ static int sol_load_file(fs_file fin, struct s_base *fp)
         return 0;
 
     sol_load_indx(fin, fp);
+
+    if (!sol_validate_counts(fp))
+        return 0;
 
     if (fp->ac)
         fp->av = (char *)          calloc(fp->ac, sizeof (*fp->av));
@@ -519,33 +551,20 @@ static int sol_load_file(fs_file fin, struct s_base *fp)
     if (fp->ac)
         fs_read(fp->av, 1, fp->ac, fin);
 
-    SDL_Log("sol_pos(%s): after_ac=%ld dc=%d mc=%d vc=%d ec=%d sc=%d tc=%d oc=%d gc=%d lc=%d nc=%d pc=%d bc=%d hc=%d zc=%d jc=%d xc=%d rc=%d uc=%d wc=%d ic=%d",
-            sol_load_name, fs_tell(fin),
-            fp->dc, fp->mc, fp->vc, fp->ec, fp->sc, fp->tc, fp->oc,
-            fp->gc, fp->lc, fp->nc, fp->pc, fp->bc, fp->hc, fp->zc,
-            fp->jc, fp->xc, fp->rc, fp->uc, fp->wc, fp->ic);
-
     for (i = 0; i < fp->dc; i++) sol_load_dict(fin, fp->dv + i);
-    SDL_Log("sol_pos(%s): after_dc=%ld", sol_load_name, fs_tell(fin));
     for (i = 0; i < fp->mc; i++) sol_load_mtrl(fin, fp->mv + i);
-    SDL_Log("sol_pos(%s): after_mc=%ld", sol_load_name, fs_tell(fin));
     for (i = 0; i < fp->vc; i++) sol_load_vert(fin, fp->vv + i);
     for (i = 0; i < fp->ec; i++) sol_load_edge(fin, fp->ev + i);
     for (i = 0; i < fp->sc; i++) sol_load_side(fin, fp->sv + i);
     for (i = 0; i < fp->tc; i++) sol_load_texc(fin, fp->tv + i);
     for (i = 0; i < fp->oc; i++) sol_load_offs(fin, fp->ov + i);
     for (i = 0; i < fp->gc; i++) sol_load_geom(fin, fp->gv + i, fp);
-    SDL_Log("sol_pos(%s): after_gc=%ld", sol_load_name, fs_tell(fin));
     for (i = 0; i < fp->lc; i++) sol_load_lump(fin, fp->lv + i);
     for (i = 0; i < fp->nc; i++) sol_load_node(fin, fp->nv + i);
-    SDL_Log("sol_pos(%s): after_nc=%ld", sol_load_name, fs_tell(fin));
     for (i = 0; i < fp->pc; i++) sol_load_path(fin, fp->pv + i);
-    SDL_Log("sol_pos(%s): after_pc=%ld", sol_load_name, fs_tell(fin));
     for (i = 0; i < fp->bc; i++) sol_load_body(fin, fp->bv + i);
-    SDL_Log("sol_pos(%s): after_bc=%ld", sol_load_name, fs_tell(fin));
     for (i = 0; i < fp->hc; i++) sol_load_item(fin, fp->hv + i);
     for (i = 0; i < fp->zc; i++) sol_load_goal(fin, fp->zv + i);
-    SDL_Log("sol_pos(%s): after_zc=%ld", sol_load_name, fs_tell(fin));
 
     /* Repair goals with corrupted radius and position.                     */
     /* Some pre-compiled SOL files have the last fields of a goal entry     */
@@ -635,7 +654,6 @@ static int sol_load_file(fs_file fin, struct s_base *fp)
     /* and real data — no seek-back needed.                                 */
 
     for (i = 0; i < fp->jc; i++) sol_load_jump(fin, fp->jv + i);
-    SDL_Log("sol_pos(%s): after_jc=%ld", sol_load_name, fs_tell(fin));
     for (i = 0; i < fp->xc; i++) sol_load_swch(fin, fp->xv + i);
 
     /* Repair switches with corrupted path indices.                         */
@@ -768,11 +786,8 @@ static int sol_load_file(fs_file fin, struct s_base *fp)
                     sol_load_name, skipped);
     }
 
-    SDL_Log("sol_pos(%s): after_uc=%ld", sol_load_name, fs_tell(fin));
     for (i = 0; i < fp->wc; i++) sol_load_view(fin, fp->wv + i);
-    SDL_Log("sol_pos(%s): after_wc=%ld", sol_load_name, fs_tell(fin));
     for (i = 0; i < fp->ic; i++) fp->iv[i] = get_index(fin);
-    SDL_Log("sol_pos(%s): after_ic=%ld filesize?", sol_load_name, fs_tell(fin));
 
     /* Fix shifted index array.                                             */
     /*                                                                      */

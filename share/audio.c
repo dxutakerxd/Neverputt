@@ -187,7 +187,19 @@ static struct voice *voice_init(const char *filename, float a)
 
                 /* The file will be closed when the Ogg is cleared. */
             }
-            else fs_close(fp);
+            else
+            {
+                fs_close(fp);
+                free(V->name);
+                free(V);
+                return NULL;
+            }
+        }
+        else
+        {
+            free(V->name);
+            free(V);
+            return NULL;
         }
     }
     return V;
@@ -354,6 +366,9 @@ void audio_play(const char *filename, float a)
 
         V = voice_init(filename, a);
 
+        if (!V)
+            return;
+
         /* Add it to the list of sounding voices. */
 
         SDL_LockAudio();
@@ -422,20 +437,26 @@ void audio_music_stop(void)
 
 void audio_music_fade_out(float t)
 {
-    SDL_LockAudio();
+    if (audio_state)
     {
-        if (music) music->damp = -1.0f / (AUDIO_RATE * t);
+        SDL_LockAudio();
+        {
+            if (music) music->damp = -1.0f / (AUDIO_RATE * t);
+        }
+        SDL_UnlockAudio();
     }
-    SDL_UnlockAudio();
 }
 
 void audio_music_fade_in(float t)
 {
-    SDL_LockAudio();
+    if (audio_state)
     {
-        if (music) music->damp = +1.0f / (AUDIO_RATE * t);
+        SDL_LockAudio();
+        {
+            if (music) music->damp = +1.0f / (AUDIO_RATE * t);
+        }
+        SDL_UnlockAudio();
     }
-    SDL_UnlockAudio();
 }
 
 void audio_music_fade_to(float t, const char *filename)

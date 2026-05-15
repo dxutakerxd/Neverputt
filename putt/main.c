@@ -266,6 +266,10 @@ static int loop(void)
             joy_remove(e.jdevice.which);
             break;
 
+        case SDL_APP_WILLENTERBACKGROUND:
+            goto_pause(&st_over);
+            break;
+
         case SDL_APP_DIDENTERFOREGROUND:
             putt_context_restore();
             break;

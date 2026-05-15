@@ -104,12 +104,17 @@ static void *image_load_png(const char *filename, int *width,
         default: longjmp(png_jmpbuf(readp), -1);
         }
 
+        /* Guard against integer overflow in w * h * b. */
+
+        if (w <= 0 || h <= 0 || w > 8192 || h > 8192)
+            longjmp(png_jmpbuf(readp), -1);
+
         if (!(bytep = png_malloc(readp, h * sizeof (png_bytep))))
             longjmp(png_jmpbuf(readp), -1);
 
         /* Allocate the final pixel buffer and read pixels there. */
 
-        if ((p = (unsigned char *) malloc(w * h * b)))
+        if ((p = (unsigned char *) malloc((size_t) w * h * b)))
         {
             for (i = 0; i < h; i++)
                 bytep[i] = p + w * b * (h - i - 1);
@@ -166,9 +171,19 @@ static void *image_load_jpg(const char *filename, int *width,
         h = cinfo.output_height;
         b = cinfo.output_components;
 
+        /* Guard against integer overflow in w * h * b. */
+
+        if (w <= 0 || h <= 0 || w > 8192 || h > 8192)
+        {
+            jpeg_finish_decompress(&cinfo);
+            jpeg_destroy_decompress(&cinfo);
+            fs_close(fp);
+            return NULL;
+        }
+
         /* Allocate the final pixel buffer and copy pixels there. */
 
-        if ((p = (unsigned char *) malloc (w * h * b)))
+        if ((p = (unsigned char *) malloc ((size_t) w * h * b)))
         {
             while (cinfo.output_scanline < cinfo.output_height)
             {

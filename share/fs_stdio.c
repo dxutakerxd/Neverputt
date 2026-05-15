@@ -29,13 +29,26 @@
 #include <jni.h>
 #include <android/asset_manager_jni.h>
 #include <SDL.h>
-static JNIEnv* env;
-static jobject activity;
-static jclass clazz;
+static jobject activity;   /* Global ref — valid across JNI calls. */
+static jclass clazz;       /* Global ref. */
 static jmethodID copyAssetMethodID;
 void fs_android_asset(const char* path) {
-    jstring fname = (*env)->NewStringUTF(env, path);
+    JNIEnv *env = (JNIEnv*)SDL_AndroidGetJNIEnv();
+    jstring fname;
+
+    if (!path || !env)
+        return;
+
+    fname = (*env)->NewStringUTF(env, path);
+    if (!fname)
+    {
+        if ((*env)->ExceptionCheck(env))
+            (*env)->ExceptionClear(env);
+        return;
+    }
     (*env)->CallBooleanMethod(env, activity, copyAssetMethodID, fname);
+    if ((*env)->ExceptionCheck(env))
+        (*env)->ExceptionClear(env);
     (*env)->DeleteLocalRef(env, fname);
 }
 #endif
@@ -59,10 +72,22 @@ static List  fs_path;
 int fs_init(const char *argv0)
 {
 #ifdef ANDROID
-	env = (JNIEnv*)SDL_AndroidGetJNIEnv();
-	activity = (jobject)SDL_AndroidGetActivity();
-	clazz = (*env)->GetObjectClass(env, activity);
-	copyAssetMethodID = (*env)->GetMethodID(env, clazz, "copyAsset", "(Ljava/lang/String;)Z");
+	{
+		JNIEnv *env = (JNIEnv*)SDL_AndroidGetJNIEnv();
+		jobject local_activity = (jobject)SDL_AndroidGetActivity();
+		jclass  local_clazz    = (*env)->GetObjectClass(env, local_activity);
+
+		/* Promote to global refs so they survive past this JNI call. */
+
+		activity = (*env)->NewGlobalRef(env, local_activity);
+		clazz    = (*env)->NewGlobalRef(env, local_clazz);
+
+		(*env)->DeleteLocalRef(env, local_activity);
+		(*env)->DeleteLocalRef(env, local_clazz);
+
+		copyAssetMethodID = (*env)->GetMethodID(env, clazz, "copyAsset",
+		                                        "(Ljava/lang/String;)Z");
+	}
 
 	fs_dir_base = (char*) SDL_AndroidGetInternalStoragePath();
 #else
@@ -99,8 +124,11 @@ int fs_quit(void)
     }
 
 #ifdef ANDROID
-	(*env)->DeleteLocalRef(env, clazz);
-	(*env)->DeleteLocalRef(env, activity);
+	{
+		JNIEnv *env = (JNIEnv*)SDL_AndroidGetJNIEnv();
+		if (clazz)    { (*env)->DeleteGlobalRef(env, clazz);    clazz    = NULL; }
+		if (activity) { (*env)->DeleteGlobalRef(env, activity); activity = NULL; }
+	}
 #endif
 
     return 1;
@@ -324,12 +352,9 @@ fs_file fs_open_append(const char *path)
 
 int fs_close(fs_file fh)
 {
-    if (fclose(fh->handle))
-    {
-        free(fh);
-        return 1;
-    }
-    return 0;
+    int result = (fclose(fh->handle) == 0);
+    free(fh);
+    return result;
 }
 
 /*----------------------------------------------------------------------------*/

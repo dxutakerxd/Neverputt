@@ -103,33 +103,6 @@ int game_init(const char *s)
 
     sol_init_sim(&file.vary);
 
-    /* Debug: dump spatial data */
-    for (i = 0; i < file.vary.uc; i++)
-        SDL_Log("DBG game_init ball[%d] p=(%.4f,%.4f,%.4f) r=%.4f",
-                i, file.vary.uv[i].p[0], file.vary.uv[i].p[1],
-                file.vary.uv[i].p[2], file.vary.uv[i].r);
-    for (i = 0; i < file.base.zc; i++)
-        SDL_Log("DBG game_init goal[%d] p=(%.4f,%.4f,%.4f) r=%.4f",
-                i, file.base.zv[i].p[0], file.base.zv[i].p[1],
-                file.base.zv[i].p[2], file.base.zv[i].r);
-    for (i = 0; i < file.base.wc; i++)
-        SDL_Log("DBG game_init view[%d] p=(%.4f,%.4f,%.4f) q=(%.4f,%.4f,%.4f)",
-                i, file.base.wv[i].p[0], file.base.wv[i].p[1],
-                file.base.wv[i].p[2], file.base.wv[i].q[0],
-                file.base.wv[i].q[1], file.base.wv[i].q[2]);
-    {
-        /* Log vertex bounds */
-        float minx=1e9, maxx=-1e9, minz=1e9, maxz=-1e9;
-        int j;
-        for (j = 0; j < file.base.vc; j++) {
-            float x = file.base.vv[j].p[0], z = file.base.vv[j].p[2];
-            if (x < minx) minx = x; if (x > maxx) maxx = x;
-            if (z < minz) minz = z; if (z > maxz) maxz = z;
-        }
-        SDL_Log("DBG game_init vertex bounds X[%.2f..%.2f] Z[%.2f..%.2f]",
-                minx, maxx, minz, maxz);
-    }
-
     for (i = 0; i < file.base.dc; i++)
     {
         const char *k = file.base.av + file.base.dv[i].ai;

@@ -57,23 +57,34 @@ public class MySDLActivity extends SDLActivity {
     }
 
     public boolean copyAssetFile(String fromAssetPath) {
+        InputStream in = null;
+        OutputStream out = null;
         try {
-            InputStream in = assetManager.open("data/" + fromAssetPath);
+            in = assetManager.open("data/" + fromAssetPath);
             File toFile = new File(baseDir + "/data/" + fromAssetPath);
+
+            /* Path traversal guard: ensure the resolved path stays under our data dir. */
+            String canonical = toFile.getCanonicalPath();
+            String safeBase  = new File(baseDir + "/data/").getCanonicalPath();
+            if (!canonical.startsWith(safeBase)) {
+                if (in != null) in.close();
+                return false;
+            }
 
             if (toFile.exists() && toFile.length() == in.available())
                 return true;
 
             toFile.getParentFile().mkdirs();
-            OutputStream out = new FileOutputStream(toFile);
+            out = new FileOutputStream(toFile);
             copyFile(in, out);
-            in.close();
             out.flush();
-            out.close();
             return true;
         } catch(Exception e) {
             e.printStackTrace();
             return false;
+        } finally {
+            try { if (in  != null) in.close();  } catch (IOException ignored) {}
+            try { if (out != null) out.close(); } catch (IOException ignored) {}
         }
     }
 
