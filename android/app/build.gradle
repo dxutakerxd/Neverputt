@@ -119,7 +119,10 @@ android {
 }
 
 dependencies {
-    implementation 'com.google.android.gms:play-services-ads:23.6.0'
+    // AdMob — Play Store builds only.  Scoped to `playImplementation` so
+    // `dapp` builds compile and link without the proprietary SDK on the
+    // classpath; see LICENSE-MINIPUTT.md for the GPL interpretation.
+    playImplementation 'com.google.android.gms:play-services-ads:23.6.0'
 
     // Solana deps — dApp Store builds only
     dappImplementation 'com.solanamobile:mobile-wallet-adapter-clientlib-ktx:2.0.3'

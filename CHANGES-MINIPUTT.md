@@ -67,7 +67,13 @@ onward.
   legacy package directory removed.
 - `MySDLActivity.java` rewritten for the new package, with asset path
   traversal guard added and `vibrate()` JNI entry point.
-- `AdManager.java` added — see source for current implementation.
+- `AdManager.java` added — JNI bridge to the Google Mobile Ads SDK.
+  Lives in the `play` source set (`app/src/play/java/`); a no-op stub
+  of the same public API is provided for the `dapp` flavor at
+  `app/src/dapp/java/`. The AdMob SDK is referenced only from this Java
+  layer, never from any GPL-covered C source. See `LICENSE-MINIPUTT.md`
+  for the interpretation of GPL v3 §1 and §5 under which this bundling
+  is permitted.
 - `SolanaWalletManager.kt` added (Kotlin, MWA + Solana RPC + SGT
   verification, dApp-flavor source set only).
 - `AndroidManifest.xml` rewritten with required permissions

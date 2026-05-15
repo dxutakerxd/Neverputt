@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  AdMob metadata, applied only to the `play` build flavor via Android's
+  manifest-merger.  The `dapp` flavor inherits no AdMob configuration.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+  <application>
+
+    <!-- AdMob App ID
+         Test App ID: ca-app-pub-3940256099942544~3347511713 -->
+    <meta-data
+        android:name="com.google.android.gms.ads.APPLICATION_ID"
+        android:value="ca-app-pub-XXXXXXXXXXXXXXXX~XXXXXXXXXX" />
+
+  </application>
+
+</manifest>
