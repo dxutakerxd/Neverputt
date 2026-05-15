@@ -18,7 +18,7 @@ under the terms of the GNU General Public License version 3 (GPLv3).
 
 - **Project**: MiniPutt Mobile
 - **License**: GNU General Public License v3 (GPLv3)
-- **Source Code**: [Repository URL - to be filled in]
+- **Source Code**: https://github.com/dxutakerxd/Neverputt
 
 The full text of GPLv3 is included in `doc/legal/`.
 
@@ -38,14 +38,19 @@ Under the condition that:
 
 ## Modifications Made
 
-This derivative work includes the following changes from the original:
+This derivative work includes the following high-level changes from the
+original:
 - Ported and optimized for 2026 mobile phones
 - Rebranded from "Neverputt" to "MiniPutt Mobile"
 - Updated Android SDK/NDK targets for modern devices
-- Added touch-optimized controls
-- Added WebView-based ad support (GPL-compatible: ads run in separate WebView process)
-- Added Solana Pay integration for ad-free upgrade
-- Updated build system for current Android/Gradle toolchain
+- Added touch-optimized controls and haptic feedback
+- Added ad support and Solana Mobile Wallet Adapter integration
+- Hardened the SOL level-data loader against pre-existing binary
+  corruption in shipped assets
+- Updated build system for current Android / Gradle / CMake toolchain
+
+A detailed, per-area record of modifications (the prominent notices
+required by GPL v3 §5(a)) is maintained in [`CHANGES-MINIPUTT.md`](CHANGES-MINIPUTT.md).
 
 ## Third Party Components
 
